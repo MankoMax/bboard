@@ -5,6 +5,10 @@ from django.core.exceptions import ValidationError
 from .apps import user_registered
 
 
+class SearchForm(forms.Form):
+    keyword = forms.CharField(required=False, max_length=20, label='')
+
+
 class ChangeUserInfoForm(forms.ModelForm):
     email = forms.EmailField(required=True, label='Адрес электронной почты')
 

@@ -11,10 +11,13 @@ from django.views.generic.edit import UpdateView, CreateView, DeleteView
 from django.views.generic.base import TemplateView
 from django.contrib.messages.views import SuccessMessageMixin
 from django.urls import reverse_lazy
-from .models import AdvUser
+from .models import AdvUser, SubRubric, Bb
 from .forms import ChangeUserInfoForm, RegisterUserForm
 from .utilities import signer
 from django.core.signing import BadSignature
+from django.core.paginator import Paginator
+from .forms import SearchForm
+from django.db.models import Q
 
 
 class DeleteUserView(LoginRequiredMixin, DeleteView):
@@ -112,6 +115,25 @@ def other_page(request, page):
 def index(request):
     return render(request, 'main/index.html')
 
+
+def by_rubric(request, pk):
+    rubric = get_object_or_404(SubRubric, pk=pk)
+    bbs = Bb.objects.filter(is_active=True, rubric=pk)
+    if 'keyword' in request.GET:
+        keyword = request.GET['keyword']
+        q = Q(title__icontains=keyword) | Q(content__icontains=keyword)
+        bbs = bbs.filter(q)
+    else:
+        keyword = ''
+    form = SearchForm(initial={'keyword': keyword})
+    paginator = Paginator(bbs, 2)
+    if 'page' in request.GET:
+        page_num = request.GET['page']
+    else:
+        page_num = 1
+    page = paginator.get_page(page_num)
+    context = {'rubric': rubric, 'bbs': page.object_list, 'page': page, 'form': form}
+    return render(request, 'main/by_rubric.html', context)
 
 
     
