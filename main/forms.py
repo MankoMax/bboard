@@ -1,5 +1,6 @@
 from django import forms
-from .models import AdvUser, SuperRubric, SubRubric, Bb, AdditionalImage
+from captcha.fields import CaptchaField
+from .models import AdvUser, SuperRubric, SubRubric, Bb, AdditionalImage, Comment
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from .apps import user_registered
@@ -73,3 +74,19 @@ class SubRubricForm(forms.ModelForm):
     class Meta:
         model = SubRubric
         fields = '__all__'
+        
+
+class UserCommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        exclude = ('is_active',)
+        widgets = {'bb': forms.HiddenInput}
+        
+
+class GuestCommentForm(forms.ModelForm):
+    captcha = CaptchaField(label='Введите текст с картинки', error_messages={'invalid': 'Неверный текст'})
+    
+    class Meta:
+        model = Comment
+        exclude = ('is_active',)
+        widgets = {'bb': forms.HiddenInput}

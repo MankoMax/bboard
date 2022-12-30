@@ -10,6 +10,7 @@ Django = "^4.1.4"
 django-bootstrap4 = "^22.3"
 easy-thumbnails = "^2.8.4"
 django-cleanup = "^6.0.0"
+django-simple-captcha = "^0.5.17"
 
 [tool.poetry.dev-dependencies]
 

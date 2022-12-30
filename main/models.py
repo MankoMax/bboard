@@ -1,11 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from .utilities import get_timestamp_path
+from .utilities import get_timestamp_path, send_new_comment_notification
+from django.dispatch import Signal
+from django.db.models.signals import post_save
+from .utilities import send_activation_notification
 
 
 class AdvUser(AbstractUser):
     is_activated = models.BooleanField(default=True, db_index=True, verbose_name='Прошел активацию?')
-    send_messages = models.BooleanField(default=True, verbose_name='Слать оповещения o новых комментариях?')
+    send_messages = models.BooleanField(default=False, verbose_name='Слать оповещения o новых комментариях?')
 
     def delete(self, *args, **kwargs):
         for bb in self.bb_set.all():
@@ -60,6 +63,7 @@ class SubRubric(Rubric):
         verbose_name_plural = 'Подрубрики'
         ordering = ['super_rubric__order', 'super_rubric__name', 'order', 'name']
         
+        
 class Bb(models.Model):
     rubric = models.ForeignKey(SubRubric, on_delete=models.PROTECT, verbose_name='Рубрика')
     title = models.CharField(max_length=40, verbose_name='Товар')
@@ -81,6 +85,7 @@ class Bb(models.Model):
         verbose_name_plural = 'Объявления'
         ordering = ['-created_at']
         
+        
 class AdditionalImage(models.Model):
     bb = models.ForeignKey(Bb, on_delete=models.CASCADE, verbose_name='Объявление')
     image = models.ImageField(upload_to=get_timestamp_path, verbose_name='Изображение')
@@ -91,3 +96,24 @@ class AdditionalImage(models.Model):
     class Meta:
         verbose_name = 'Дополнительное изображение'
         verbose_name_plural = 'Дополнительные изображения'
+        
+
+class Comment(models.Model):
+    bb = models.ForeignKey(Bb, on_delete=models.CASCADE, verbose_name='Объявление')
+    author = models.CharField(max_length=40, verbose_name='Автор')
+    content = models.TextField(verbose_name='Содержание')
+    is_active = models.BooleanField(default=True, db_index=True, verbose_name='Выводить в списке?')
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name='Опубликовано')
+    
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
+        ordering = ['created_at']
+           
+
+def post_save_dispatcher(sender, **kwargs):
+    author = kwargs['instance'].bb.author
+    if kwargs['created'] and author.send_messages:
+        send_new_comment_notification(kwargs['instance'])
+
+post_save.connect(post_save_dispatcher, sender=Comment)
