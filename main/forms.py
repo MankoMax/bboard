@@ -1,9 +1,19 @@
 from django import forms
-from .models import AdvUser, SuperRubric, SubRubric
+from .models import AdvUser, SuperRubric, SubRubric, Bb, AdditionalImage
 from django.contrib.auth import password_validation
 from django.core.exceptions import ValidationError
 from .apps import user_registered
+from django.forms import inlineformset_factory
 
+
+class BbForm(forms.ModelForm):
+    class Meta:
+        model = Bb
+        fields = '__all__'
+        widgets = {'rubric': forms.HiddenInput}
+        
+AIFormSet = inlineformset_factory(Bb, AdditionalImage, fields='__all__')
+    
 
 class SearchForm(forms.Form):
     keyword = forms.CharField(required=False, max_length=20, label='')
